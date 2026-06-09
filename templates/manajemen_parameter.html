@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Manajemen Parameter - Sistem Pakar{% endblock %}
+
+{% block content %}
+<div class="table-container">
+    
+    <div class="table-header-section">
+        <h2 class="login-title" style="white-space: nowrap; margin-bottom: 5px;"><i class="fas fa-cogs"></i> Manajemen Parameter (Dropdown)</h2>
+        <p class="diagnosa-subtitle">Tambah atau hapus pilihan opsi untuk form diagnosa. Hati-hati menghapus opsi yang sedang digunakan dalam Knowledge Base!</p>
+    </div>
+
+    <div class="result-box" style="margin-bottom: 30px; border-left-color: #17a2b8;">
+        <h4 style="margin-top: 0; color: #333;">+ Tambah Opsi Baru</h4>
+        <form action="/manajemen_parameter" method="POST" style="display: flex; gap: 15px; align-items: flex-end;">
+            
+            <div class="form-group" style="flex: 1; margin: 0;">
+                <label style="font-size: 12px;">Pilih Kategori Dropdown</label>
+                <select name="kategori" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white;">
+                    <option value="jenis_perangkat">Jenis Perangkat</option>
+                    <option value="kategori_problem">Kategori Problem (Zabbix)</option>
+                    <option value="dampak_gangguan">Dampak Gangguan</option>
+                    <option value="akses_remote">Status Akses Remote</option>
+                    <option value="status_fisik">Status Kelistrikan & Fisik</option>
+                    <option value="kondisi_kabel">Kondisi Perkabelan / Optik</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="flex: 2; margin: 0;">
+                <label style="font-size: 12px;">Nama Opsi Baru (Misal: Firewall / BGP Flapping)</label>
+                <input type="text" name="nilai" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+
+            <button type="submit" class="btn-submit-diagnosa" style="margin: 0; padding: 10px 20px; width: auto; background-color: #17a2b8;">Simpan Opsi</button>
+        </form>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="tabel-riwayat">
+            <thead>
+                <tr>
+                    <th>Kategori Dropdown</th>
+                    <th>Nilai / Opsi</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data_param %}
+                <tr>
+                    <td><span class="badge-kuning" style="background-color: #e9ecef; color: #333; border: 1px solid #ccc;">{{ row.kategori }}</span></td>
+                    <td><strong>{{ row.nilai }}</strong></td>
+                    <td style="white-space: nowrap;">
+                        <a href="/hapus_parameter/{{ row.id_param }}" class="btn-edit" style="background-color: #dc3545;" onclick="return confirm('Yakin ingin menghapus opsi ini?');">
+                            <i class="fas fa-trash"></i> Hapus
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="tabel-kosong">Belum ada parameter tambahan di database.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

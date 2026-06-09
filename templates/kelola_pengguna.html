@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Kelola Pengguna - Sistem Pakar{% endblock %}
+
+{% block content %}
+<div class="table-container">
+    
+    <div class="table-header-section">
+        <h2 class="login-title" style="white-space: nowrap; margin-bottom: 5px;"><i class="fas fa-users-cog"></i> Manajemen Akses Pengguna</h2>
+        <p class="diagnosa-subtitle">Halaman eksklusif Administrator untuk menambah dan mengatur hak akses akun.</p>
+    </div>
+
+    <div class="result-box" style="margin-bottom: 30px; border-left-color: #0056b3;">
+        <h4 style="margin-top: 0; color: #333;">+ Tambah Pengguna Baru</h4>
+        <form action="/kelola_pengguna" method="POST" style="display: flex; gap: 15px; align-items: flex-end;">
+            <div class="form-group" style="flex: 1; margin: 0;">
+                <label style="font-size: 12px;">Username</label>
+                <input type="text" name="username" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div class="form-group" style="flex: 1; margin: 0;">
+                <label style="font-size: 12px;">Password</label>
+                <input type="password" name="password" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div class="form-group" style="flex: 1; margin: 0;">
+                <label style="font-size: 12px;">Hak Akses (Role)</label>
+                <select name="role" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white;">
+                    <option value="user">User (Teknisi)</option>
+                    <option value="admin">Admin (Supervisor)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit-diagnosa" style="margin: 0; padding: 10px 20px; width: auto;">Simpan</button>
+        </form>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="tabel-riwayat">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Role (Hak Akses)</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in data_user %}
+                <tr>
+                    <td><strong>{{ user.username }}</strong></td>
+                    <td><span style="color: #999; font-style: italic;">(Disembunyikan)</span></td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                            <span class="badge-hijau" style="background-color: #0056b3;">Admin</span>
+                        {% else %}
+                            <span class="badge-kuning" style="background-color: #6c757d; color: white;">User</span>
+                        {% endif %}
+                    </td>
+                    <td style="white-space: nowrap;">
+                        <a href="/reset_password/{{ user.username }}" class="btn-edit" style="background-color: #ffc107; color: #333;" onclick="return confirm('Yakin ingin mereset password {{ user.username }} menjadi 123456?');">
+                            <i class="fas fa-key"></i> Reset Pass
+                        </a>
+                        
+                        {% if user.username != session.get('username') %}
+                        <a href="/hapus_user/{{ user.username }}" class="btn-edit" style="background-color: #dc3545;" onclick="return confirm('PERINGATAN! Yakin ingin menghapus permanen user {{ user.username }}?');">
+                            <i class="fas fa-trash"></i> Hapus
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

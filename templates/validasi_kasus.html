@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Validasi Kasus - Sistem Pakar{% endblock %}
+
+{% block content %}
+<div class="table-container">
+    
+    <div class="table-header-section">
+        <h2 class="login-title" style="white-space: nowrap; margin-bottom: 5px;"><i class="fas fa-hourglass-half"></i> Kasus Menunggu Validasi (Review)</h2>
+        <p class="diagnosa-subtitle">Daftar insiden baru dari teknisi yang membutuhkan verifikasi solusi sebelum masuk ke basis pengetahuan.</p>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="tabel-riwayat">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Perangkat</th>
+                    <th>Problem Zabbix</th>
+                    <th>Diagnosis Sementara</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data_kasus %}
+                    <tr>
+                        <td>#{{ row.id_kasus }}</td>
+                        <td>{{ row.jenis_perangkat }}</td>
+                        <td>{{ row.kategori_problem }}</td>
+                        <td>{{ row.diagnosis[:60] }}...</td>
+                        <td><span class="badge-kuning">{{ row.status_kasus }}</span></td>
+                        <td style="white-space: nowrap;">
+                            <a href="/edit_kasus/{{ row.id_kasus }}" class="btn-edit">Review / Validasi</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="tabel-kosong">Tidak ada kasus baru yang menunggu review.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

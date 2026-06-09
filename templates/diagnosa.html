@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagnosa - Sistem Pakar{% endblock %}
+
+{% block content %}
+    <div class="dashboard-container">
+        
+        <h2 class="login-title"><i class="fas fa-stethoscope"></i> Input Gejala Gangguan</h2>
+        <p class="diagnosa-subtitle">Silakan pilih parameter yang sesuai dengan kondisi di lapangan dan log monitoring.</p>
+
+        <form action="/proses_diagnosa" method="POST">
+            
+            <div class="section-title">1. Parameter Monitoring Jaringan (Zabbix/NMS)</div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Jenis Perangkat</label>
+                    <select name="jenis_perangkat" required>
+                        <option value="" disabled selected>-- Pilih Perangkat --</option>
+                        <option value="Router">Router</option>
+                        <option value="Switch">Switch</option>
+                        <option value="OLT">OLT</option>
+                        <option value="CCTV">CCTV</option>
+                        <option value="CPE/ONT Client">CPE/ONT Client</option>
+                        <option value="Multiple Perangkat (Area/POP Down)">Multiple Perangkat (Area/POP Down)</option>
+                        <option value="Lainnya">Lainnya (AP, Server, HTB, dll)</option>
+                        {% for opsi in opsi_tambahan.jenis_perangkat %}
+                            <option value="{{ opsi }}">- {{ opsi }} (Tambahan)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Kategori Problem (Log Monitoring)</label>
+                    <select name="kategori_problem" required>
+                        <option value="" disabled selected>-- Pilih Problem --</option>
+                        <option value="ICMP RTO/Loss">ICMP RTO/Loss</option>
+                        <option value="Interface link down">Interface link down</option>
+                        <option value="High CPU/Memory">High CPU/Memory</option>
+                        <option value="Temperature Alert">Temperature Alert</option>
+                        <option value="BGP Peer Down">BGP Peer Down</option>
+                        <option value="Tidak ada di log monitoring">Tidak ada di log monitoring</option>
+                        {% for opsi in opsi_tambahan.kategori_problem %}
+                            <option value="{{ opsi }}">- {{ opsi }} (Tambahan)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dampak Gangguan (Skala)</label>
+                    <select name="dampak_gangguan" required>
+                        <option value="" disabled selected>-- Pilih Skala Dampak --</option>
+                        <option value="1 Perangkat dalam 1 Site">1 Perangkat dalam 1 Site</option>
+                        <option value="Beberapa perangkat dalam 1 Site">Beberapa perangkat dalam 1 Site</option>
+                        <option value="Banyak Perangkat dalam 1 Area">Banyak Perangkat dalam 1 Area</option>
+                        <option value="Banyak Perangkat di beberapa Area (Problem Pusat)">Banyak Perangkat di beberapa Area (Problem Pusat)</option>
+                        {% for opsi in opsi_tambahan.dampak_gangguan %}
+                            <option value="{{ opsi }}">- {{ opsi }} (Tambahan)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Status Akses Remote</label>
+                    <select name="akses_remote" required>
+                        <option value="" disabled selected>-- Pilih Status Remote --</option>
+                        <option value="Bisa diakses dan Normal">Bisa diakses dan Normal</option>
+                        <option value="Bisa diakses tapi lag/timeout">Bisa diakses tapi lag/timeout</option>
+                        <option value="Tidak bisa di remote">Tidak bisa di remote</option>
+                        {% for opsi in opsi_tambahan.akses_remote %}
+                            <option value="{{ opsi }}">- {{ opsi }} (Tambahan)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title">2. Laporan Cek Fisik Lapangan</div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Status Kelistrikan & Fisik</label>
+                    <select name="status_fisik" required>
+                        <option value="" disabled selected>-- Pilih Kondisi Fisik --</option>
+                        <option value="Listrik lokasi Mati">Listrik lokasi Mati</option>
+                        <option value="Listrik aman perangkat Mati/Hang">Listrik aman, perangkat Mati/Hang</option>
+                        <option value="Perangkat nyala normal indikator port mati">Perangkat nyala normal, indikator port mati</option>
+                        <option value="Listrik & Perangkat Aman (Menyala Normal)">Listrik & Perangkat Aman (Menyala Normal)</option>
+                        {% for opsi in opsi_tambahan.status_fisik %}
+                            <option value="{{ opsi }}">- {{ opsi }} (Tambahan)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Kondisi Perkabelan / Optik</label>
+                    <select name="kondisi_kabel" required>
+                        <option value="" disabled selected>-- Pilih Kondisi Kabel --</option>
+                        <option value="Fisik Kabel Rusak">Fisik Kabel Rusak</option>
+                        <option value="Redaman Optik Jelek">Redaman Optik Jelek</option>
+                        <option value="SFP Rusak">SFP Rusak</option>
+                        <option value="Perkabelan Aman">Perkabelan Aman</option>
+                        {% for opsi in opsi_tambahan.kondisi_kabel %}
+                            <option value="{{ opsi }}">- {{ opsi }} (Tambahan)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; width: 100%;">
+                <button type="submit" class="btn-submit-diagnosa">Proses Diagnosa (CBR Engine)</button>
+            </div>
+            
+        </form>
+    </div>
+{% endblock %}

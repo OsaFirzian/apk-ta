@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Knowledge Base - Sistem Pakar{% endblock %}
+
+{% block content %}
+<div class="table-container">
+
+    <div class="table-header-section">
+        <h2 class="login-title" style="white-space: nowrap; margin-bottom: 5px;"><i class="fas fa-check-circle"></i> Knowledge Base (Kasus Terverifikasi)</h2>
+        <p class="diagnosa-subtitle">Basis pengetahuan kasus masa lalu yang sudah valid dan digunakan sebagai acuan kecocokan utama oleh algoritma AI.</p>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="tabel-riwayat">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Perangkat</th>
+                    <th>Problem Zabbix</th>
+                    <th>Diagnosis (Akar Masalah)</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data_kasus %}
+                    <tr>
+                        <td>#{{ row.id_kasus }}</td>
+                        <td>{{ row.jenis_perangkat }}</td>
+                        <td>{{ row.kategori_problem }}</td>
+                        <td>{{ row.diagnosis[:60] }}...</td>
+                        <td><span class="badge-hijau">{{ row.status_kasus }}</span></td>
+                        <td style="white-space: nowrap;">
+                            <a href="/edit_kasus/{{ row.id_kasus }}" class="btn-edit" style="background-color: #6c757d;">Lihat Detail</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="tabel-kosong">Belum ada kasus terverifikasi dalam basis pengetahuan.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

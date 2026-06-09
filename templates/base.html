@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistem Pakar NOC{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <div class="app-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-network-wired"></i> NOC Expert</h3>
+                <p>PT Remala Abadi</p>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="/home"><i class="fas fa-chart-line"></i> Dashboard Utama</a></li>
+                <li><a href="/home"><i class="fas fa-stethoscope"></i> Diagnosa Gangguan</a></li>
+                
+                <li><a href="/validasi_kasus"><i class="fas fa-clock"></i> Validasi Kasus (Review)</a></li>
+                <li><a href="/knowledge_base"><i class="fas fa-book"></i> Knowledge Base</a></li>
+                
+                <li><a href="/ubah_password"><i class="fas fa-user-lock"></i> Ubah Password</a></li>
+                
+                {% if session.get('role') == 'admin' %}
+                <li><a href="/manajemen_parameter"><i class="fas fa-cogs"></i> Manajemen Parameter</a></li>
+                <li><a href="/kelola_pengguna"><i class="fas fa-users"></i> Kelola Pengguna</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout ({{ session.get('username') }})</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+
+</body>
+</html>

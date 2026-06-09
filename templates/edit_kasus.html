@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Kasus - Sistem Pakar{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2 class="login-title">Review Kasus #{{ kasus.id_kasus }}</h2>
+    <p class="diagnosa-subtitle">Perbaiki kolom Diagnosis dan Solusi jika sistem memberikan prediksi yang kurang tepat.</p>
+
+    <div class="result-box">
+        <strong>Gejala yang Diinput:</strong><br>
+        - Perangkat: {{ kasus.jenis_perangkat }}<br>
+        - Problem Zabbix: {{ kasus.kategori_problem }}<br>
+        - Dampak: {{ kasus.dampak_gangguan }}<br>
+        - Fisik Lapangan: {{ kasus.status_fisik }} | {{ kasus.kondisi_kabel }}
+    </div>
+
+    <form action="/edit_kasus/{{ kasus.id_kasus }}" method="POST">
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label>Diagnosis (Akar Masalah):</label>
+            <textarea name="diagnosis" required rows="4" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-family: inherit;">{{ kasus.diagnosis }}</textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label>Solusi (Gunakan ' | ' sebagai pemisah poin):</label>
+            <textarea name="solusi" required rows="6" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-family: inherit;">{{ kasus.solusi }}</textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 30px;">
+            <label>Status Kasus:</label>
+            <select name="status_kasus" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: white;">
+                <option value="Menunggu Review" {% if kasus.status_kasus == 'Menunggu Review' %}selected{% endif %}>Menunggu Review</option>
+                <option value="Terverifikasi" {% if kasus.status_kasus == 'Terverifikasi' %}selected{% endif %}>Terverifikasi (Jadikan Knowledge Base)</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn-submit-diagnosa" style="margin-top: 0;">Simpan Perubahan</button>
+            <a href="/validasi_kasus" class="btn-back" style="text-align: center; line-height: 20px; display: block; text-decoration: none;">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Diagnosa - Sistem Pakar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="result-container">
+        
+        <h2 class="login-title">Hasil Analisis Sistem Pakar</h2>
+        
+        <p style="color: #666; margin-bottom: 10px;">Tingkat Kemiripan dengan Kasus Terdahulu:</p>
+        <div class="similarity-badge">
+            {{ hasil.persentase }}%
+        </div>
+
+        <div class="result-box" style="border-left-color: #dc3545;">
+            <div class="result-title">Diagnosis (Akar Masalah):</div>
+            <p style="color: #444; line-height: 1.5;">{{ hasil.diagnosis }}</p>
+        </div>
+
+        <div class="result-box">
+            <div class="result-title">Rekomendasi Tindakan (Solusi):</div>
+            <ol class="solution-list">
+                {% for poin in hasil.daftar_solusi %}
+                    <li>{{ poin }}</li>
+                {% endfor %}
+            </ol>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <div style="text-align: center;">
+            <a href="/home" class="btn-back">Kembali ke Dashboard</a>
+        </div>
+
+    </div> </body>
+</html>
