@@ -85,42 +85,74 @@ def kelola_pengguna():
 # =======================================================
 # 3. ROUTING MENU UTAMA & DIAGNOSA (CBR ENGINE)
 # =======================================================
+# =======================================================
+# 1. RUTE DASHBOARD UTAMA
+# =======================================================
 @app.route('/home')
 def home():
-    # Keamanan ekstra: cegah akses jika belum login
     if 'username' not in session:
         return redirect(url_for('login'))
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Ambil semua parameter tambahan dari database
+
+    # 1. Ambil Angka untuk Summary Cards
+    cursor.execute("SELECT COUNT(*) AS total FROM tabel_kasus WHERE status_kasus = 'Terverifikasi'")
+    total_kb = cursor.fetchone()['total']
+
+    cursor.execute("SELECT COUNT(*) AS total FROM tabel_kasus WHERE status_kasus = 'Menunggu Review'")
+    total_pending = cursor.fetchone()['total']
+
+    cursor.execute("SELECT COUNT(*) AS total FROM tabel_parameter")
+    total_param = cursor.fetchone()['total']
+
+    # 2. Ambil Data untuk Pie Chart (Distribusi Perangkat)
+    cursor.execute("SELECT jenis_perangkat, COUNT(*) AS jumlah FROM tabel_kasus GROUP BY jenis_perangkat")
+    chart_perangkat = cursor.fetchall()
+
+    # 3. Ambil Data untuk Pie Chart (Tren Problem Zabbix)
+    cursor.execute("SELECT kategori_problem, COUNT(*) AS jumlah FROM tabel_kasus GROUP BY kategori_problem")
+    chart_problem = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('home.html', 
+                           total_kb=total_kb, 
+                           total_pending=total_pending, 
+                           total_param=total_param, 
+                           chart_perangkat=chart_perangkat, 
+                           chart_problem=chart_problem)
+
+# =======================================================
+# 2. RUTE FORM DIAGNOSA GANGGUAN
+# =======================================================
+@app.route('/diagnosa')
+def diagnosa():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute("SELECT kategori, nilai FROM tabel_parameter")
     data_param = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    # Siapkan wadah untuk memilah opsi berdasarkan kategorinya
     opsi_tambahan = {
-        'jenis_perangkat': [],
-        'kategori_problem': [],
-        'dampak_gangguan': [],
-        'akses_remote': [],
-        'status_fisik': [],
-        'kondisi_kabel': []
+        'jenis_perangkat': [], 'kategori_problem': [], 'dampak_gangguan': [],
+        'akses_remote': [], 'status_fisik': [], 'kondisi_kabel': []
     }
-
-    # Masukkan data dari MySQL ke wadah yang sesuai
     for row in data_param:
         kategori = row['kategori']
         if kategori in opsi_tambahan:
             opsi_tambahan[kategori].append(row['nilai'])
 
-    # Kirim wadah opsi_tambahan tersebut ke halaman HTML
     return render_template('diagnosa.html', opsi_tambahan=opsi_tambahan)
 
 @app.route('/proses_diagnosa', methods=['POST'])
 def proses_diagnosa():
-    # Mengambil input dari teknisi di form HTML
+    # Mengambil input dari form
     input_kasus = {
         'jenis_perangkat': request.form.get('jenis_perangkat'),
         'kategori_problem': request.form.get('kategori_problem'),
@@ -133,11 +165,9 @@ def proses_diagnosa():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Mengambil kasus yang sudah Terverifikasi sebagai Knowledge Base
     cursor.execute("SELECT * FROM tabel_kasus WHERE status_kasus = 'Terverifikasi'")
     data_kb = cursor.fetchall()
 
-    # Bobot Kepentingan Parameter
     bobot = {
         'jenis_perangkat': 2,
         'kategori_problem': 4,
@@ -148,7 +178,6 @@ def proses_diagnosa():
     }
     total_bobot = sum(bobot.values())
 
-    # Proses Perhitungan Kemiripan (Similarity)
     hasil_perhitungan = []
     for row in data_kb:
         skor_mirip = 0
@@ -163,11 +192,15 @@ def proses_diagnosa():
             'solusi': row['solusi']
         })
 
-    # Mengambil 1 kasus dengan persentase kemiripan paling tinggi
+    # Urutkan dari persentase tertinggi ke terendah
     hasil_perhitungan = sorted(hasil_perhitungan, key=lambda x: x['persentase'], reverse=True)
-    kasus_terbaik = hasil_perhitungan[0]
+    
+    # AMBIL 3 KASUS TERBAIK (TOP 3)
+    top_3_kasus = hasil_perhitungan[:3]
+    
+    # Ambil kasus Peringkat 1 untuk disimpan sementara di database (Fase Retain)
+    kasus_terbaik = top_3_kasus[0] 
 
-    # Menyimpan kasus baru ke tabel untuk direview nantinya (Fase Retain)
     query_insert = """
     INSERT INTO tabel_kasus 
     (jenis_perangkat, kategori_problem, dampak_gangguan, akses_remote, status_fisik, kondisi_kabel, diagnosis, solusi, status_kasus)
@@ -183,15 +216,14 @@ def proses_diagnosa():
     cursor.close()
     conn.close()
 
-    # Memecah teks solusi menjadi format list/poin-poin
-    daftar_solusi = str(kasus_terbaik['solusi']).split('|')
-    kasus_terbaik['daftar_solusi'] = [s.strip() for s in daftar_solusi if s.strip()]
+    # Memecah teks solusi menjadi poin-poin UNTUK SEMUA kasus di Top 3
+    for kasus in top_3_kasus:
+        daftar_solusi = str(kasus['solusi']).split('|')
+        kasus['daftar_solusi'] = [s.strip() for s in daftar_solusi if s.strip()]
 
-    return render_template('hasil_diagnosa.html', hasil=kasus_terbaik)
+    # Kirim data top_3 ke halaman HTML
+    return render_template('hasil_diagnosa.html', top_kasus=top_3_kasus)
 
-# =======================================================
-# 4. ROUTING MANAJEMEN KASUS (VALIDASI & KNOWLEDGE BASE)
-# =======================================================
 # =======================================================
 # 4. ROUTING MANAJEMEN KASUS (VALIDASI & KNOWLEDGE BASE)
 # =======================================================
@@ -219,11 +251,15 @@ def knowledge_base():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Hanya ambil data yang Terverifikasi dan diurutkan dari ID terkecil ke terbesar
-    cursor.execute("SELECT * FROM tabel_kasus WHERE status_kasus = 'Terverifikasi' ORDER BY id_kasus ASC")
+    
+    # Kembalikan ke default sorting berdasarkan ID
+    query = "SELECT * FROM tabel_kasus WHERE status_kasus = 'Terverifikasi' ORDER BY id_kasus ASC"
+    
+    cursor.execute(query)
     data_kasus = cursor.fetchall()
     cursor.close()
     conn.close()
+    
     return render_template('knowledge_base.html', data_kasus=data_kasus)
 
 # 3. MENGEDIT DIAGNOSIS DAN SOLUSI KASUS

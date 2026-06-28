@@ -1,41 +1,50 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasil Diagnosa - Sistem Pakar</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends 'base.html' %}
 
-    <div class="result-container">
+{% block title %}Hasil Diagnosa - Sistem Pakar{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; background: transparent; box-shadow: none;">
+    
+    <div style="background: white; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px;">
+        <h2 class="login-title" style="margin-bottom: 5px;"><i class="fas fa-poll"></i> Hasil Analisis Sistem Pakar</h2>
+        <p class="diagnosa-subtitle" style="margin: 0;">Berikut adalah <strong>Top 3</strong> kemungkinan akar masalah berdasarkan perhitungan *Weighted Nearest Neighbor* terhadap riwayat insiden terdahulu.</p>
+    </div>
+
+    <div style="display: flex; gap: 25px; flex-wrap: wrap;">
         
-        <h2 class="login-title">Hasil Analisis Sistem Pakar</h2>
+        {% for hasil in top_kasus %}
         
-        <p style="color: #666; margin-bottom: 10px;">Tingkat Kemiripan dengan Kasus Terdahulu:</p>
-        <div class="similarity-badge">
-            {{ hasil.persentase }}%
-        </div>
+        <div class="result-box" style="flex: 1; min-width: 320px; background: white; position: relative; padding: 25px 20px; border-top: 5px solid {% if loop.index == 1 %}#28a745{% elif loop.index == 2 %}#ffc107{% else %}#17a2b8{% endif %}; border-left: none; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+            
+            <div style="position: absolute; top: -18px; right: 20px; background: {% if loop.index == 1 %}#28a745{% elif loop.index == 2 %}#ffc107{% else %}#17a2b8{% endif %}; color: {% if loop.index == 2 %}#333{% else %}white{% endif %}; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);">
+                #{{ loop.index }} - Kemiripan: {{ hasil.persentase }}%
+            </div>
 
-        <div class="result-box" style="border-left-color: #dc3545;">
-            <div class="result-title">Diagnosis (Akar Masalah):</div>
-            <p style="color: #444; line-height: 1.5;">{{ hasil.diagnosis }}</p>
-        </div>
+            <h4 style="color: #2c3e50; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                <i class="fas fa-search-location"></i> Diagnosis (Akar Masalah)
+            </h4>
+            <p style="color: #555; font-size: 14.5px; line-height: 1.6; margin-bottom: 25px;">{{ hasil.diagnosis }}</p>
 
-        <div class="result-box">
-            <div class="result-title">Rekomendasi Tindakan (Solusi):</div>
-            <ol class="solution-list">
+            <h4 style="color: #2c3e50; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                <i class="fas fa-tools"></i> Rekomendasi Solusi
+            </h4>
+            <ol style="padding-left: 20px; color: #555; font-size: 14px; line-height: 1.7; margin: 0;">
                 {% for poin in hasil.daftar_solusi %}
-                    <li>{{ poin }}</li>
+                    <li style="margin-bottom: 5px;">{{ poin }}</li>
                 {% endfor %}
             </ol>
+            
         </div>
+        
+        {% endfor %}
 
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+    </div>
 
-        <div style="text-align: center;">
-            <a href="/home" class="btn-back">Kembali ke Dashboard</a>
-        </div>
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="/home" class="btn-submit-diagnosa" style="text-decoration: none; padding: 12px 30px; display: inline-block; width: auto; font-size: 16px;">
+            <i class="fas fa-redo"></i> Lakukan Diagnosa Baru
+        </a>
+    </div>
 
-    </div> </body>
-</html>
+</div>
+{% endblock %}

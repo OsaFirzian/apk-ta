@@ -7,16 +7,22 @@
 
     <div class="table-header-section">
         <h2 class="login-title" style="white-space: nowrap; margin-bottom: 5px;"><i class="fas fa-check-circle"></i> Knowledge Base (Kasus Terverifikasi)</h2>
-        <p class="diagnosa-subtitle">Basis pengetahuan kasus masa lalu yang sudah valid dan digunakan sebagai acuan kecocokan utama oleh algoritma AI.</p>
+        <p class="diagnosa-subtitle">Basis pengetahuan kasus masa lalu. Klik pada judul kolom untuk mengurutkan data (A-Z / Z-A).</p>
     </div>
     
     <div class="table-responsive">
-        <table class="tabel-riwayat">
+        <table class="tabel-riwayat" id="tabelKB">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Perangkat</th>
-                    <th>Problem Zabbix</th>
+                    <th onclick="sortTable(0)" style="cursor: pointer; white-space: nowrap;" title="Urutkan ID">
+                        ID <i class="fas fa-sort" style="color: #ccc; margin-left: 5px;"></i>
+                    </th>
+                    <th onclick="sortTable(1)" style="cursor: pointer; white-space: nowrap;" title="Urutkan Perangkat">
+                        Perangkat <i class="fas fa-sort" style="color: #ccc; margin-left: 5px;"></i>
+                    </th>
+                    <th onclick="sortTable(2)" style="cursor: pointer; white-space: nowrap;" title="Urutkan Problem">
+                        Problem Zabbix <i class="fas fa-sort" style="color: #ccc; margin-left: 5px;"></i>
+                    </th>
                     <th>Diagnosis (Akar Masalah)</th>
                     <th>Status</th>
                     <th>Aksi</th>
@@ -44,4 +50,64 @@
     </div>
 
 </div>
+
+<script>
+function sortTable(n) {
+    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+    table = document.getElementById("tabelKB");
+    switching = true;
+    dir = "asc"; // Arah awal sorting adalah Ascending
+    
+    // Looping sampai tidak ada lagi yang perlu ditukar
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        
+        // Mulai dari baris index 1 (melewati baris ke-0 yaitu header tabel)
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            
+            // Ambil elemen sel yang akan dibandingkan (x dan y)
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+            
+            // Bersihkan teks (jika kolom ID, hapus tanda '#' agar bisa dihitung sebagai angka)
+            var valX = x.innerHTML.toLowerCase().replace('#', '');
+            var valY = y.innerHTML.toLowerCase().replace('#', '');
+            
+            // Cek apakah kolom tersebut angka (Kolom ID) atau teks
+            if (!isNaN(valX) && !isNaN(valY)) {
+                valX = parseFloat(valX);
+                valY = parseFloat(valY);
+            }
+
+            // Periksa arah sorting
+            if (dir == "asc") {
+                if (valX > valY) {
+                    shouldSwitch = true;
+                    break;
+                }
+            } else if (dir == "desc") {
+                if (valX < valY) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+        }
+        
+        if (shouldSwitch) {
+            // Lakukan penukaran posisi baris
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+        } else {
+            // Jika tidak ada penukaran dan arahnya "asc", ubah arah ke "desc" dan ulangi
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+}
+</script>
 {% endblock %}

@@ -1,26 +1,119 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - Sistem Pakar Diagnosa</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f2f5;
-            margin: 0;
-        }
-        h1 {
-            color: #333;
-        }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
 
-    <h1>Selamat Datang di Halaman Home!</h1>
-    </body>
-</html>
+{% block title %}Dashboard Utama - Sistem Pakar{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="dashboard-container">
+    
+    <div style="margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+        <h2 class="login-title" style="margin-bottom: 5px; text-align: left;"><i class="fas fa-chart-line"></i> Dashboard Operasional NOC</h2>
+        <p class="diagnosa-subtitle" style="text-align: left; margin: 0;">Ringkasan statistik insiden jaringan dan performa basis pengetahuan AI.</p>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 35px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 300px; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; border-top: 4px solid #0056b3;">
+            <h4 style="text-align: center; color: #333; margin-top: 0; margin-bottom: 15px;">Distribusi Perangkat Bermasalah</h4>
+            <div style="position: relative; height: 320px; width: 100%;">
+                <canvas id="chartPerangkat"></canvas>
+            </div>
+        </div>
+        
+        <div style="flex: 1; min-width: 300px; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; border-top: 4px solid #17a2b8;">
+            <h4 style="text-align: center; color: #333; margin-top: 0; margin-bottom: 15px;">Tren Kategori Problem (Zabbix)</h4>
+            <div style="position: relative; height: 320px; width: 100%;">
+                <canvas id="chartProblem"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 40px; flex-wrap: wrap;">
+        <div style="flex: 1; text-align: center; background: #f8f9fa; border-left: 5px solid #28a745; padding: 20px; border-radius: 8px; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+            <div style="font-size: 36px; font-weight: bold; color: #28a745;">{{ total_kb }}</div>
+            <div style="color: #666; font-size: 14px; margin-top: 5px;">Total Knowledge Base<br>(Terverifikasi)</div>
+        </div>
+        <div style="flex: 1; text-align: center; background: #f8f9fa; border-left: 5px solid #ffc107; padding: 20px; border-radius: 8px; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+            <div style="font-size: 36px; font-weight: bold; color: #ffc107;">{{ total_pending }}</div>
+            <div style="color: #666; font-size: 14px; margin-top: 5px;">Menunggu Review<br>(Butuh Validasi)</div>
+        </div>
+        <div style="flex: 1; text-align: center; background: #f8f9fa; border-left: 5px solid #6c757d; padding: 20px; border-radius: 8px; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+            <div style="font-size: 36px; font-weight: bold; color: #6c757d;">{{ total_param }}</div>
+            <div style="color: #666; font-size: 14px; margin-top: 5px;">Total Parameter Aktif<br>(Gejala Dinamis)</div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <a href="/diagnosa" class="btn-submit-diagnosa" style="width: auto; text-decoration: none; padding: 12px 30px; margin: 0; font-size: 15px;">
+            <i class="fas fa-stethoscope"></i> Mulai Diagnosa Baru
+        </a>
+        
+        {% if session.get('role') == 'admin' %}
+        <a href="/validasi_kasus" class="btn-submit-diagnosa" style="width: auto; background-color: #ffc107; color: #333; text-decoration: none; padding: 12px 30px; margin: 0; font-size: 15px;">
+            <i class="fas fa-tasks"></i> Review Kasus Pending
+        </a>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    const labelPerangkat = [
+        {% for row in chart_perangkat %}"{{ row.jenis_perangkat }}",{% endfor %}
+    ];
+    const dataPerangkat = [
+        {% for row in chart_perangkat %}{{ row.jumlah }},{% endfor %}
+    ];
+
+    const labelProblem = [
+        {% for row in chart_problem %}"{{ row.kategori_problem }}",{% endfor %}
+    ];
+    const dataProblem = [
+        {% for row in chart_problem %}{{ row.jumlah }},{% endfor %}
+    ];
+
+    const bgColors = ['#0056b3', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#e83e8c', '#fd7e14'];
+
+    // Konfigurasi umum untuk memindahkan legend ke BAWAH
+    const chartOptions = {
+        responsive: true, 
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom', // Pindahkan ke bawah
+                labels: {
+                    boxWidth: 15, // Ukuran kotak warna
+                    padding: 20,  // Jarak antar teks
+                    font: { size: 12 }
+                }
+            }
+        }
+    };
+
+    new Chart(document.getElementById('chartPerangkat'), {
+        type: 'pie',
+        data: {
+            labels: labelPerangkat,
+            datasets: [{
+                data: dataPerangkat,
+                backgroundColor: bgColors,
+                borderWidth: 1
+            }]
+        },
+        options: chartOptions // Terapkan konfigurasi legend
+    });
+
+    new Chart(document.getElementById('chartProblem'), {
+        type: 'doughnut', 
+        data: {
+            labels: labelProblem,
+            datasets: [{
+                data: dataProblem,
+                backgroundColor: bgColors.slice().reverse(), 
+                borderWidth: 1
+            }]
+        },
+        options: chartOptions // Terapkan konfigurasi legend
+    });
+</script>
+{% endblock %}
