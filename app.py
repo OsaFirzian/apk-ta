@@ -414,8 +414,50 @@ def hapus_parameter(id_param):
     conn.commit()
     cursor.close()
     conn.close()
+
+# =======================================================
+# PUSAT LAPORAN
+# =======================================================
+@app.route('/laporan')
+def laporan():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 1. Ambil semua kasus untuk dipisah di Python
+    cursor.execute("SELECT * FROM tabel_kasus ORDER BY id_kasus DESC")
+    semua_kasus = cursor.fetchall()
+
+    # 2. Ambil data statistik perangkat
+    cursor.execute("SELECT jenis_perangkat, COUNT(*) AS jumlah FROM tabel_kasus GROUP BY jenis_perangkat")
+    stat_perangkat = cursor.fetchall()
+    
+    # 3. Ambil data statistik problem
+    cursor.execute("SELECT kategori_problem, COUNT(*) AS jumlah FROM tabel_kasus GROUP BY kategori_problem")
+    stat_problem = cursor.fetchall()
+
+    # 4. Ambil daftar perangkat unik untuk filter Dropdown
+    cursor.execute("SELECT DISTINCT jenis_perangkat FROM tabel_kasus WHERE status_kasus = 'Terverifikasi'")
+    list_perangkat = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    # Pisahkan kasus berdasarkan status
+    kasus_terverifikasi = [k for k in semua_kasus if k['status_kasus'] == 'Terverifikasi']
+    kasus_pending = [k for k in semua_kasus if k['status_kasus'] == 'Menunggu Review']
+
+    return render_template('laporan.html', 
+                           kasus_terverifikasi=kasus_terverifikasi,
+                           kasus_pending=kasus_pending,
+                           stat_perangkat=stat_perangkat,
+                           stat_problem=stat_problem,
+                           list_perangkat=list_perangkat)
     
     return redirect(url_for('manajemen_parameter'))
+
 # =======================================================
 # 5. MENJALANKAN SERVER FLASK
 # =======================================================

@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}Pusat Laporan - Sistem Pakar{% endblock %}
+
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<div class="dashboard-container">
+    
+    <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
+        <h2 class="login-title" style="margin-bottom: 5px; text-align: left;"><i class="fas fa-file-pdf"></i> Pusat Laporan NOC</h2>
+        <p class="diagnosa-subtitle" style="text-align: left; margin: 0;">Export data operasional ke dalam format dokumen resmi (PDF).</p>
+    </div>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        
+        <!-- CARD LAPORAN 1: KNOWLEDGE BASE -->
+        <div class="result-box" style="flex: 1; min-width: 300px; border-left: 5px solid #007bff; background: white;">
+            <h4 style="margin-top: 0; color: #333;"><i class="fas fa-book"></i> Laporan Knowledge Base (SOP)</h4>
+            <p style="font-size: 13px; color: #666;">Cetak daftar kasus terverifikasi sebagai panduan teknisi lapangan.</p>
+            <div class="form-group">
+                <label>Filter Perangkat:</label>
+                <select id="filter-perangkat" class="form-control" style="margin-bottom: 15px;">
+                    <option value="Semua">-- Semua Perangkat --</option>
+                    {% for p in list_perangkat %}
+                        <option value="{{ p.jenis_perangkat }}">{{ p.jenis_perangkat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button onclick="cetakLaporan('area-laporan-kb', 'Laporan_Knowledge_Base')" class="btn-submit-diagnosa" style="width: 100%; margin: 0; padding: 10px; border-radius: 5px; font-size: 14px;">
+                <i class="fas fa-download"></i> Cetak Laporan KB
+            </button>
+        </div>
+
+        <!-- CARD LAPORAN 2: HANDOVER SHIFT -->
+        <div class="result-box" style="flex: 1; min-width: 300px; border-left: 5px solid #ffc107; background: white;">
+            <h4 style="margin-top: 0; color: #333;"><i class="fas fa-exchange-alt"></i> Laporan Handover (Pending)</h4>
+            <p style="font-size: 13px; color: #666;">Cetak daftar kasus yang masih menunggu validasi untuk operasional pergantian shift.</p>
+            <div style="height: 70px;"></div> <!-- Spacer agar tombol sejajar -->
+            <button onclick="cetakLaporan('area-laporan-pending', 'Laporan_Handover_Pending')" class="btn-submit-diagnosa" style="width: 100%; background-color: #ffc107; color: #333; margin: 0; padding: 10px; border-radius: 5px; font-size: 14px;">
+                <i class="fas fa-download"></i> Cetak Daftar Pending
+            </button>
+        </div>
+
+        <!-- CARD LAPORAN 3: STATISTIK -->
+        <div class="result-box" style="flex: 1; min-width: 300px; border-left: 5px solid #17a2b8; background: white;">
+            <h4 style="margin-top: 0; color: #333;"><i class="fas fa-chart-bar"></i> Laporan Statistik NOC</h4>
+            <p style="font-size: 13px; color: #666;">Cetak rekapitulasi jumlah insiden berdasarkan perangkat dan kategori masalah.</p>
+            <div style="height: 70px;"></div> <!-- Spacer -->
+            <button onclick="cetakLaporan('area-laporan-statistik', 'Laporan_Statistik_Insiden')" class="btn-submit-diagnosa" style="width: 100%; background-color: #17a2b8; margin: 0; padding: 10px; border-radius: 5px; font-size: 14px;">
+                <i class="fas fa-download"></i> Cetak Statistik
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ====================================================================== -->
+<!-- TEMPLATE DOKUMEN PDF TERSEMBUNYI (HANYA MUNCUL SAAT DI-GENERATE) -->
+<!-- ====================================================================== -->
+<div id="wadah-cetak-tersembunyi" style="display: none;">
+    
+    <!-- 1. TEMPLATE LAPORAN KNOWLEDGE BASE -->
+    <div id="area-laporan-kb" style="padding: 10px; color: black; font-family: 'Times New Roman', Times, serif; font-size: 11pt; background: white; line-height: 1.4;">
+        <img src="{{ url_for('static', filename='Header.png') }}" style="width: 100%; margin-bottom: 20px; display: block;" alt="Header">
+        <h3 style="text-align: center; text-decoration: underline; font-size: 14pt; margin-bottom: 5px;">LAPORAN KNOWLEDGE BASE (SOP INSIDEN)</h3>
+        <p style="text-align: right; margin-bottom: 20px;">Jakarta, <span class="tgl-cetak-otomatis"></span></p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt;" border="1">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="padding: 5px; width: 5%; text-align: center;">ID</th>
+                    <th style="padding: 5px; width: 20%;">Perangkat & Problem</th>
+                    <th style="padding: 5px; width: 35%;">Diagnosis</th>
+                    <th style="padding: 5px; width: 40%;">Solusi / Tindakan</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-cetak-kb">
+                {% for row in kasus_terverifikasi %}
+                <tr class="baris-kb" data-perangkat="{{ row.jenis_perangkat }}" style="page-break-inside: avoid;">
+                    <td style="padding: 5px; text-align: center; vertical-align: top;">#{{ row.id_kasus }}</td>
+                    <td style="padding: 5px; vertical-align: top;">
+                        <strong>{{ row.jenis_perangkat }}</strong><br>
+                        <span style="font-size: 9pt;">{{ row.kategori_problem }}</span>
+                    </td>
+                    <td style="padding: 5px; vertical-align: top;">{{ row.diagnosis }}</td>
+                    <td style="padding: 5px; vertical-align: top;">{{ row.solusi }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 40px; width: 100%; display: flex; justify-content: flex-end; page-break-inside: avoid;">
+            <div style="text-align: center; width: 250px;">
+                <p style="margin-bottom: 70px;">PT. Remala Abadi</p>
+                <p style="margin: 0; text-decoration: underline; font-weight: bold;">Divisi NOC</p>
+            </div>
+        </div>
+        <img src="{{ url_for('static', filename='Footer.png') }}" style="width: 100%; margin-top: 30px; display: block;" alt="Footer">
+    </div>
+
+    <!-- 2. TEMPLATE LAPORAN PENDING (HANDOVER) -->
+    <div id="area-laporan-pending" style="padding: 10px; color: black; font-family: 'Times New Roman', Times, serif; font-size: 11pt; background: white; line-height: 1.4;">
+        <img src="{{ url_for('static', filename='Header.png') }}" style="width: 100%; margin-bottom: 20px; display: block;" alt="Header">
+        <h3 style="text-align: center; text-decoration: underline; font-size: 14pt; margin-bottom: 5px;">LAPORAN HANDOVER (KASUS MENUNGGU REVIEW)</h3>
+        <p style="text-align: right; margin-bottom: 20px;">Jakarta, <span class="tgl-cetak-otomatis"></span></p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt;" border="1">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="padding: 5px; width: 5%; text-align: center;">ID</th>
+                    <th style="padding: 5px; width: 25%;">Perangkat & Problem</th>
+                    <th style="padding: 5px; width: 70%;">Prediksi Diagnosis Awal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in kasus_pending %}
+                <tr style="page-break-inside: avoid;">
+                    <td style="padding: 5px; text-align: center; vertical-align: top;">#{{ row.id_kasus }}</td>
+                    <td style="padding: 5px; vertical-align: top;">
+                        <strong>{{ row.jenis_perangkat }}</strong><br>
+                        <span style="font-size: 9pt;">{{ row.kategori_problem }}</span>
+                    </td>
+                    <td style="padding: 5px; vertical-align: top;">{{ row.diagnosis }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" style="padding: 10px; text-align: center;">Tidak ada kasus pending saat ini.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 40px; width: 100%; display: flex; justify-content: flex-end; page-break-inside: avoid;">
+            <div style="text-align: center; width: 250px;">
+                <p style="margin-bottom: 70px;">PT. Remala Abadi</p>
+                <p style="margin: 0; text-decoration: underline; font-weight: bold;">Divisi NOC</p>
+            </div>
+        </div>
+        <img src="{{ url_for('static', filename='Footer.png') }}" style="width: 100%; margin-top: 30px; display: block;" alt="Footer">
+    </div>
+
+    <!-- 3. TEMPLATE LAPORAN STATISTIK -->
+    <div id="area-laporan-statistik" style="padding: 10px; color: black; font-family: 'Times New Roman', Times, serif; font-size: 11pt; background: white; line-height: 1.4;">
+        <img src="{{ url_for('static', filename='Header.png') }}" style="width: 100%; margin-bottom: 20px; display: block;" alt="Header">
+        <h3 style="text-align: center; text-decoration: underline; font-size: 14pt; margin-bottom: 5px;">LAPORAN STATISTIK INSIDEN JARINGAN</h3>
+        <p style="text-align: right; margin-bottom: 20px;">Jakarta, <span class="tgl-cetak-otomatis"></span></p>
+        
+        <h4 style="margin-top: 20px; margin-bottom: 5px;">A. Distribusi Berdasarkan Perangkat</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 11pt;" border="1">
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 8px;">Jenis Perangkat</th>
+                <th style="padding: 8px; width: 25%; text-align: center;">Jumlah Kasus</th>
+            </tr>
+            {% for stat in stat_perangkat %}
+            <tr>
+                <td style="padding: 8px;">{{ stat.jenis_perangkat }}</td>
+                <td style="padding: 8px; text-align: center;">{{ stat.jumlah }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h4 style="margin-top: 10px; margin-bottom: 5px;">B. Distribusi Berdasarkan Kategori Problem Zabbix</h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11pt;" border="1">
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 8px;">Kategori Problem</th>
+                <th style="padding: 8px; width: 25%; text-align: center;">Jumlah Kasus</th>
+            </tr>
+            {% for stat in stat_problem %}
+            <tr>
+                <td style="padding: 8px;">{{ stat.kategori_problem }}</td>
+                <td style="padding: 8px; text-align: center;">{{ stat.jumlah }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        
+        <div style="margin-top: 40px; width: 100%; display: flex; justify-content: flex-end; page-break-inside: avoid;">
+            <div style="text-align: center; width: 250px;">
+                <p style="margin-bottom: 70px;">PT. Remala Abadi</p>
+                <p style="margin: 0; text-decoration: underline; font-weight: bold;">Divisi NOC</p>
+            </div>
+        </div>
+        <img src="{{ url_for('static', filename='Footer.png') }}" style="width: 100%; margin-top: 30px; display: block;" alt="Footer">
+    </div>
+</div>
+
+<script>
+    // Isi semua span tanggal cetak secara otomatis
+    const dateObj = new Date();
+    const opsiTanggal = { day: 'numeric', month: 'long', year: 'numeric' };
+    const tanggalStr = dateObj.toLocaleDateString('id-ID', opsiTanggal);
+    document.querySelectorAll('.tgl-cetak-otomatis').forEach(el => el.innerText = tanggalStr);
+
+    function cetakLaporan(elementId, namaFile) {
+        if (elementId === 'area-laporan-kb') {
+            const pilihan = document.getElementById('filter-perangkat').value;
+            const baris = document.querySelectorAll('.baris-kb');
+            
+            baris.forEach(b => {
+                if (pilihan === 'Semua' || b.getAttribute('data-perangkat') === pilihan) {
+                    b.style.display = ''; 
+                } else {
+                    b.style.display = 'none'; 
+                }
+            });
+        }
+
+        const elemen = document.getElementById(elementId);
+        
+        // Konfigurasi PDF diubah menjadi Portrait
+        const konfigurasi = {
+            margin:       0.5,
+            filename:     namaFile + '.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+
+        elemen.style.display = 'block';
+        document.body.appendChild(elemen);
+
+        html2pdf().set(konfigurasi).from(elemen).save().then(() => {
+            document.getElementById('wadah-cetak-tersembunyi').appendChild(elemen);
+            elemen.style.display = 'none';
+        });
+    }
+</script>
+{% endblock %}

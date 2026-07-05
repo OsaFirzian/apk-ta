@@ -3,41 +3,207 @@
 {% block title %}Edit Kasus - Sistem Pakar{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <h2 class="login-title">Review Kasus #{{ kasus.id_kasus }}</h2>
-    <p class="diagnosa-subtitle">Perbaiki kolom Diagnosis dan Solusi jika sistem memberikan prediksi yang kurang tepat.</p>
+<!-- Muat Library html2pdf.js untuk cetak dokumen -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <div class="result-box">
-        <strong>Gejala yang Diinput:</strong><br>
-        - Perangkat: {{ kasus.jenis_perangkat }}<br>
-        - Problem Zabbix: {{ kasus.kategori_problem }}<br>
-        - Dampak: {{ kasus.dampak_gangguan }}<br>
-        - Fisik Lapangan: {{ kasus.status_fisik }} | {{ kasus.kondisi_kabel }}
+<div class="dashboard-container">
+    
+    <!-- HEADER BAGIAN ATAS (JUDUL ) -->
+    <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+        <h2 class="login-title" style="margin-bottom: 5px;"><i class="fas fa-search"></i> Review Kasus #{{ kasus.id_kasus }}</h2>
+        <p class="diagnosa-subtitle" style="margin: 0;">Perbaiki kolom Diagnosis dan Solusi jika sistem memberikan prediksi yang kurang tepat.</p>
     </div>
 
-    <form action="/edit_kasus/{{ kasus.id_kasus }}" method="POST">
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label>Diagnosis (Akar Masalah):</label>
-            <textarea name="diagnosis" required rows="4" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-family: inherit;">{{ kasus.diagnosis }}</textarea>
+    <!-- ========================================== -->
+    <!-- AREA YANG AKAN DICETAK MENJADI PDF -->
+    <!-- ========================================== -->
+    <div id="area-cetak" style="padding: 5px; background: white;">
+        
+        <!-- BAGIAN 1: KOP SURAT (DISEMBUNYIKAN DI WEB, HANYA MUNCUL DI PDF) -->
+        <div id="kop-surat" style="display: none; color: black; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; margin-bottom: 5px;">
+            
+            <!-- GAMBAR HEADER -->
+            <img src="{{ url_for('static', filename='Header.png') }}" style="width: 100%; margin-bottom: 10px;" alt="Header">
+
+            <div style="text-align: right; margin-bottom: 20px;">
+                Jakarta, <span id="tanggal-cetak"></span>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h3 style="margin: 0; text-decoration: underline; font-size: 12pt; font-weight: bold;">BERITA ACARA PENYELESAIAN GANGGUAN</h3>
+            </div>
+            
+            <table style="width: 100%; border: none; margin-bottom: 20px; font-size: 12pt;">
+                <tr><td style="width: 15%;">No</td><td style="width: 2%;">:</td><td>{{ kasus.id_kasus }} / RA-IT / BA / 26</td></tr>
+                <tr><td>Kepada Yth</td><td>:</td><td>Pelanggan / Pihak Terkait</td></tr>
+                <tr><td>Hal</td><td>:</td><td>Laporan Penyelesaian Insiden Jaringan</td></tr>
+            </table>
+            
+            <p style="text-align: justify; margin-bottom: 10px;">Dengan hormat,</p>
+            <p style="text-align: justify;">Bersama ini kami dari PT. Remala Abadi melaporkan bahwa tim NOC telah melakukan investigasi dan penanganan insiden jaringan dengan rincian gejala sebagai berikut:</p>
         </div>
 
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label>Solusi (Gunakan ' | ' sebagai pemisah poin):</label>
-            <textarea name="solusi" required rows="6" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-family: inherit;">{{ kasus.solusi }}</textarea>
+        <!-- BAGIAN 2: INFO GEJALA (MUNCUL DI WEB SEPERTI BIASA) -->
+        <div class="result-box" id="box-gejala">
+            <strong>Gejala yang Diinput:</strong><br>
+            - Perangkat: {{ kasus.jenis_perangkat }}<br>
+            - Problem Zabbix: {{ kasus.kategori_problem }}<br>
+            - Dampak: {{ kasus.dampak_gangguan }}<br>
+            - Akses Remote: {{ kasus.akses_remote }}<br>
+            - Fisik Lapangan: {{ kasus.status_fisik }} | {{ kasus.kondisi_kabel }}
         </div>
 
-        <div class="form-group" style="margin-bottom: 30px;">
-            <label>Status Kasus:</label>
-            <select name="status_kasus" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: white;">
-                <option value="Menunggu Review" {% if kasus.status_kasus == 'Menunggu Review' %}selected{% endif %}>Menunggu Review</option>
-                <option value="Terverifikasi" {% if kasus.status_kasus == 'Terverifikasi' %}selected{% endif %}>Terverifikasi (Jadikan Knowledge Base)</option>
-            </select>
+        <!-- TEKS PENGHUBUNG (DISEMBUNYIKAN DI WEB, HANYA MUNCUL DI PDF) -->
+        <div id="teks-penghubung" style="display: none; color: black; font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin-bottom: 10px; margin-top: 20px;">
+            Berdasarkan pengecekan lapangan, berikut adalah hasil diagnosis dan tindakan solusi yang telah diimplementasikan:
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <button type="submit" class="btn-submit-diagnosa" style="margin-top: 0;">Simpan Perubahan</button>
-            <a href="/validasi_kasus" class="btn-back" style="text-align: center; line-height: 20px; display: block; text-decoration: none;">Batal</a>
+        <!-- BAGIAN 3: FORM DIAGNOSA (MUNCUL DI WEB SEPERTI BIASA) -->
+        <form action="/update_kasus/{{ kasus.id_kasus }}" method="POST">
+            <div class="form-group">
+                <label style="font-weight: bold;">Diagnosis (Akar Masalah):</label>
+                <textarea name="diagnosis" class="form-control" rows="3" required style="width: 100%;">{{ kasus.diagnosis }}</textarea>
+            </div>
+            <div class="form-group">
+                <label style="font-weight: bold;">Tindakan / Solusi:</label>
+                <textarea name="solusi" class="form-control" rows="4" required style="width: 100%;">{{ kasus.solusi }}</textarea>
+            </div>
+
+    </div> 
+    <!-- ========================================== -->
+    <!-- AKHIR AREA CETAK -->
+    <!-- ========================================== -->
+
+    <!-- BAGIAN 4: TANDA TANGAN & FOOTER (DISEMBUNYIKAN DI WEB, HANYA MUNCUL DI PDF) -->
+    <div id="elemen-ttd" style="display: none; color: black; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5;">
+        <p style="margin-top: 20px; text-align: justify;">Demikian berita acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+        
+        <div style="margin-top: 40px; width: 100%; display: flex; justify-content: flex-end;">
+            <div style="text-align: center; width: 250px;">
+                <p style="margin-bottom: 80px;">PT. Remala Abadi</p>
+                <p style="margin: 0; text-decoration: underline; font-weight: bold;">Divisi NOC</p>
+            </div>
         </div>
+
+        <!-- GAMBAR FOOTER -->
+        <img src="{{ url_for('static', filename='Footer.png') }}" style="width: 100%; margin-top: 40px;" alt="Footer">
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CONTAINER TOMBOL BAWAH (SEJAJAR KIRI & KANAN) -->
+    <!-- ========================================== -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
+        
+        <!-- TOMBOL CETAK PDF (KIRI) -->
+        <button onclick="cetakPDF()" type="button" style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">
+            <i class="fas fa-file-pdf"></i> Cetak Berita Acara
+        </button>
+
+        <!-- TOMBOL SIMPAN FORM (KANAN) -->
+        <button type="submit" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">
+            <i class="fas fa-save"></i> Simpan & Verifikasi Kasus
+        </button>
+
+    </div>
+    
     </form>
 </div>
+
+<!-- SCRIPT UNTUK GENERATE PDF -->
+<script>
+    // Set tanggal otomatis
+    const dateObj = new Date();
+    const opsiTanggal = { day: 'numeric', month: 'long', year: 'numeric' };
+    document.getElementById('tanggal-cetak').innerText = dateObj.toLocaleDateString('id-ID', opsiTanggal);
+
+    function cetakPDF() {
+        const elemen = document.getElementById('area-cetak');
+        const kopSurat = document.getElementById('kop-surat');
+        const teksPenghubung = document.getElementById('teks-penghubung');
+        const elemenTTD = document.getElementById('elemen-ttd');
+        const boxGejala = document.getElementById('box-gejala');
+
+        // 1. Munculkan elemen surat resmi
+        kopSurat.style.display = 'block';
+        teksPenghubung.style.display = 'block';
+        elemen.appendChild(elemenTTD); 
+        elemenTTD.style.display = 'block';
+
+        // 2. Hilangkan kotak abu-abu di box gejala agar seragam 12pt Times New Roman
+        boxGejala.style.border = "none";
+        boxGejala.style.padding = "0";
+        boxGejala.style.backgroundColor = "transparent";
+        boxGejala.style.fontFamily = "'Times New Roman', Times, serif";
+        boxGejala.style.fontSize = "12pt";
+        boxGejala.style.color = "black";
+
+        // 3. Trik Anti-Terpotong: Ubah Textarea menjadi Teks Biasa sementara waktu
+        const textareas = elemen.querySelectorAll('textarea');
+        textareas.forEach(ta => {
+            const printDiv = document.createElement('div');
+            printDiv.className = 'print-replacement'; // Penanda elemen sementara
+            printDiv.innerText = ta.value; // Mengambil isi teks beserta enter/baris baru
+            
+            // Atur gaya teks agar rapi dan otomatis turun ke bawah jika kepanjangan
+            printDiv.style.fontFamily = "'Times New Roman', Times, serif";
+            printDiv.style.fontSize = "12pt";
+            printDiv.style.color = "black";
+            printDiv.style.width = "100%";
+            printDiv.style.whiteSpace = "pre-wrap"; // Memaksa teks turun ke baris baru (Wrap)
+            printDiv.style.wordWrap = "break-word";
+            printDiv.style.marginBottom = "15px";
+            printDiv.style.lineHeight = "1.5";
+
+            // Masukkan div teks ini dan sembunyikan textarea aslinya
+            ta.parentNode.insertBefore(printDiv, ta);
+            ta.style.display = "none";
+        });
+
+        const labels = elemen.querySelectorAll('label');
+        labels.forEach(lbl => {
+            lbl.style.fontFamily = "'Times New Roman', Times, serif";
+            lbl.style.fontSize = "12pt";
+            lbl.style.color = "black";
+        });
+
+        // 4. Konfigurasi PDF
+        const konfigurasi = {
+            margin:       0.8, 
+            filename:     'BA_Penyelesaian_Gangguan_{{ kasus.id_kasus }}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true }, 
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+
+        // 5. Proses Cetak & Kembalikan Tampilan Web
+        html2pdf().set(konfigurasi).from(elemen).save().then(() => {
+            // Sembunyikan kembali elemen surat resmi
+            kopSurat.style.display = 'none';
+            teksPenghubung.style.display = 'none';
+            elemenTTD.style.display = 'none';
+            document.body.appendChild(elemenTTD); 
+            
+            // Kembalikan tampilan box gejala seperti semula
+            boxGejala.style.border = "";
+            boxGejala.style.padding = "";
+            boxGejala.style.backgroundColor = "";
+            boxGejala.style.fontFamily = "";
+            boxGejala.style.fontSize = "";
+            boxGejala.style.color = "";
+
+            // Munculkan Textarea Asli dan Hapus Div Teks Pengganti
+            textareas.forEach(ta => {
+                ta.style.display = "block"; 
+            });
+            const printDivs = elemen.querySelectorAll('.print-replacement');
+            printDivs.forEach(div => div.remove()); 
+            
+            labels.forEach(lbl => {
+                lbl.style.fontFamily = "";
+                lbl.style.fontSize = "";
+                lbl.style.color = "";
+            });
+        });
+    }
+</script>
 {% endblock %}
